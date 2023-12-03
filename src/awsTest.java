@@ -32,6 +32,13 @@ import com.amazonaws.services.ec2.model.DescribeImagesRequest;
 import com.amazonaws.services.ec2.model.DescribeImagesResult;
 import com.amazonaws.services.ec2.model.Image;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.ec2.model.Tag;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Base64;
+
 
 public class awsTest {
 
@@ -74,6 +81,7 @@ public class awsTest {
 			System.out.println("  3. start instance               4. available regions      ");
 			System.out.println("  5. stop instance                6. create instance        ");
 			System.out.println("  7. reboot instance              8. list images            ");
+			System.out.println("  9. stop all instances          10. start all instances    ");
 			System.out.println("                                 99. quit                   ");
 			System.out.println("------------------------------------------------------------");
 			
@@ -142,6 +150,13 @@ public class awsTest {
 			case 8: 
 				listImages();
 				break;
+				
+			case 9: 
+				stopAllInstances();
+				break;
+			case 10: 
+				startAllInstances();
+				break;
 
 			case 99: 
 				System.out.println("bye!");
@@ -167,13 +182,18 @@ public class awsTest {
 
 			for(Reservation reservation : response.getReservations()) {
 				for(Instance instance : reservation.getInstances()) {
+					
+					String instanceName = getInstanceName(instance);
+					
 					System.out.printf(
 						"[id] %s, " +
+						"[Name] %s, " +
 						"[AMI] %s, " +
 						"[type] %s, " +
 						"[state] %10s, " +
 						"[monitoring state] %s",
 						instance.getInstanceId(),
+						instanceName,
 						instance.getImageId(),
 						instance.getInstanceType(),
 						instance.getState().getName(),
@@ -188,6 +208,15 @@ public class awsTest {
 				done = true;
 			}
 		}
+	}
+	
+	private static String getInstanceName(Instance instance) {
+	    for (Tag tag : instance.getTags()) {
+	        if ("Name".equals(tag.getKey())) {
+	            return tag.getValue();
+	        }
+	    }
+	    return "No name";
 	}
 	
 	public static void availableZones()	{
@@ -233,9 +262,23 @@ public class awsTest {
 
 		ec2.startInstances(request);
 
-		System.out.printf("Successfully started instance %s", instance_id);
+		System.out.printf("Successfully started instance %s\n", instance_id);
 	}
 	
+	public static void startAllInstances() {
+        
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+
+        DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+        DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesRequest);
+
+        for (Reservation reservation : describeInstancesResult.getReservations()) {
+            for (Instance instance : reservation.getInstances()) {
+                String instanceId = instance.getInstanceId();
+                startInstance(instanceId);
+            }
+        }
+	}
 	
 	public static void availableRegions() {
 		
@@ -278,6 +321,21 @@ public class awsTest {
 		}
 
 	}
+	
+	public static void stopAllInstances() {
+      
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+
+        DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+        DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesRequest);
+
+        for (Reservation reservation : describeInstancesResult.getReservations()) {
+            for (Instance instance : reservation.getInstances()) {
+                String instanceId = instance.getInstanceId();
+                stopInstance(instanceId);
+            }
+        }
+    }
 	
 	public static void createInstance(String ami_id) {
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
