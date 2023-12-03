@@ -150,12 +150,26 @@ def list_images(ec2, ami_name):
         print(f"Error: {e}")
 
 def create_instance(ec2, ami_id):
+
+    iam_client = boto3.client('iam')
+    role_name = 'AmazonSSMManagedInstanceCore'
+
+    '''
+    response = iam_client.get_role(
+        RoleName=role_name
+    )
+    iam_role_arn = response['Role']['RoleName']
+    '''
+
     try:
         response = ec2.run_instances(
             ImageId=ami_id,
             InstanceType='t2.micro',
             MinCount=1,
-            MaxCount=1
+            MaxCount=1,
+            IamInstanceProfile={
+                'Name': role_name
+            }
         )
 
         instance_id = response['Instances'][0]['InstanceId']
@@ -235,7 +249,7 @@ def main():
             reboot_instance(ec2, instance_id)
         elif choice == '7':
             ami_name = input("Enter AMI name to list: ")
-            list_images(ec2, 'htcondor-worker')
+            list_images(ec2, ami_name)
         elif choice == '8':
             ami_id = input("Enter AMI ID to create an instance: ")
             create_instance(ec2, ami_id)
@@ -245,9 +259,8 @@ def main():
             stop_all_instances(ec2)
         elif choice == '11':
             instance_id = input("Enter instance ID: ")
-
-            #command = input("Enter shell command to execute: ")
-            command = 'condor_status'
+            command = input("Enter shell command to execute: ")
+            #command = 'condor_status'
             result = execute_command(instance_id, command)
             print(f"Command Result on {instance_id}:\n{result}")
         elif choice == '12':
