@@ -1,6 +1,8 @@
-lib/
-bin/
-.settings/
+java/lib/
+java/bin/
+java/.settings/
+java/.classpath
+java/.project
 
-.classpath
-.project
+python/venv/
+.metadata/
