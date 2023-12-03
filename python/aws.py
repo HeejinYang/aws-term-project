@@ -124,7 +124,7 @@ def available_regions(ec2):
 
 def reboot_instance(ec2, instance_id):
     try:
-        response = ec2.reboot_instances(InstanceIds=[instance_id])
+        ec2.reboot_instances(InstanceIds=[instance_id])
         print(f"Successfully rebooted instance {instance_id}")
 
     except NoCredentialsError:
@@ -167,18 +167,23 @@ def create_instance(ec2, ami_id):
     except Exception as e:
         print(f"Error: {e}")
 
+
 def execute_command(instance_id, command):
     ssm_client = boto3.client('ssm')
+
     response = ssm_client.send_command(
-        InstanceIds=[instance_id],
+        InstanceIds=[
+            instance_id
+        ],
         DocumentName="AWS-RunShellScript",
         Parameters={'commands': [command]},
     )
+
     command_id = response['Command']['CommandId']
-    
-    # command 끝날때까지 기다리기
+
     waiter = ssm_client.get_waiter('command_executed')
-    waiter.wait(InstanceIds=[instance_id], CommandId=command_id)
+    waiter.wait(InstanceId=instance_id, CommandId=command_id)
+
     output = ssm_client.get_command_invocation(
         InstanceId=instance_id,
         CommandId=command_id,
@@ -193,7 +198,6 @@ def terminate_instance(ec2, instance_id):
         print(f"Termination response: {response}")
     except Exception as e:
         print(f"Error terminating instance {instance_id}: {e}")
-
 
 
 def main():
@@ -230,7 +234,7 @@ def main():
             instance_id = input("Enter instance ID to reboot: ")
             reboot_instance(ec2, instance_id)
         elif choice == '7':
-            # ami_name = input("Enter AMI name to list: ")
+            ami_name = input("Enter AMI name to list: ")
             list_images(ec2, 'htcondor-worker')
         elif choice == '8':
             ami_id = input("Enter AMI ID to create an instance: ")
@@ -241,7 +245,9 @@ def main():
             stop_all_instances(ec2)
         elif choice == '11':
             instance_id = input("Enter instance ID: ")
-            command = input("Enter shell command to execute: ")
+
+            #command = input("Enter shell command to execute: ")
+            command = 'condor_status'
             result = execute_command(instance_id, command)
             print(f"Command Result on {instance_id}:\n{result}")
         elif choice == '12':
