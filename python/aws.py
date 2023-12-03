@@ -23,7 +23,7 @@ def list_instances(ec2):
                     state = instance['State']['Name']
                     monitoring_state = instance['Monitoring']['State']
 
-                    print(f"[id] {instance_id}, [Name] {instance_name}, [AMI] {ami_id}, [type] {instance_type}, [state] {state}, [monitoring state] {monitoring_state}")
+                    print(f"[id] {instance_id}, [state] {state}, [Name] {instance_name}, [AMI] {ami_id}, [type] {instance_type}, [monitoring state] {monitoring_state}")
         else:
             print("No instances found.")
 
@@ -52,6 +52,86 @@ def stop_instance(ec2, instance_id):
     except Exception as e:
         print(f"Error: {e}")
 
+def available_zones(ec2):
+    print("Available zones....")
+    try:
+        response = ec2.describe_availability_zones()
+        zones = response['AvailabilityZones']
+
+        for zone in zones:
+            zone_id = zone['ZoneId']
+            region_name = zone['RegionName']
+            zone_name = zone['ZoneName']
+            print(f"[id] {zone_id}, [region] {region_name}, [zone] {zone_name}")
+
+        print(f"You have access to {len(zones)} Availability Zones.")
+
+    except NoCredentialsError:
+        print("Credentials not available. Please check your AWS credentials configuration.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+def available_regions(ec2):
+    print("Available regions ....")
+    try:
+        response = ec2.describe_regions()
+        regions = response['Regions']
+
+        for region in regions:
+            region_name = region['RegionName']
+            endpoint = region['Endpoint']
+            print(f"[region] {region_name}, [endpoint] {endpoint}")
+
+    except NoCredentialsError:
+        print("Credentials not available. Please check your AWS credentials configuration.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+def reboot_instance(ec2, instance_id):
+    try:
+        response = ec2.reboot_instances(InstanceIds=[instance_id])
+        print(f"Successfully rebooted instance {instance_id}")
+
+    except NoCredentialsError:
+        print("Credentials not available. Please check your AWS credentials configuration.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+def list_images(ec2, ami_name):
+    try:
+        response = ec2.describe_images(Filters=[{'Name': 'name', 'Values': [ami_name]}])
+
+        for image in response['Images']:
+            image_id = image['ImageId']
+            name = image['Name']
+            owner_id = image['OwnerId']
+
+            print(f"[ImageID] {image_id}, [Name] {name}, [Owner] {owner_id}")
+
+    except NoCredentialsError:
+        print("Credentials not available. Please check your AWS credentials configuration.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+def create_instance(ec2, ami_id):
+    try:
+        response = ec2.run_instances(
+            ImageId=ami_id,
+            InstanceType='t2.micro',
+            MinCount=1,
+            MaxCount=1
+        )
+
+        instance_id = response['Instances'][0]['InstanceId']
+
+        print(f"Successfully started EC2 instance {instance_id} based on AMI {ami_id}")
+
+    except NoCredentialsError:
+        print("Credentials not available. Please check your AWS credentials configuration.")
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 def main():
     # EC2 클라이언트 생성
@@ -62,9 +142,14 @@ def main():
         print("1. List instances")
         print("2. Start instance")
         print("3. Stop instance")
-        print("4. Quit")
+        print("4. available zones")
+        print("5. available regions")
+        print("6. reboot instance")
+        print("7. list images")
+        print("8. create instance")
+        print("99. Quit")
 
-        choice = input("Enter your choice (1-4): ")
+        choice = input("Enter your choice (1-99): ")
 
         if choice == '1':
             list_instances(ec2)
@@ -75,10 +160,23 @@ def main():
             instance_id = input("Enter instance ID to stop: ")
             stop_instance(ec2, instance_id)
         elif choice == '4':
+            available_zones(ec2)
+        elif choice == '5':
+            available_regions(ec2)
+        elif choice == '6':
+            instance_id = input("Enter instance ID to reboot: ")
+            reboot_instance(ec2, instance_id)
+        elif choice == '7':
+            # ami_name = input("Enter AMI name to list: ")
+            list_images(ec2, 'htcondor-worker')
+        elif choice == '8':
+            ami_id = input("Enter AMI ID to create an instance: ")
+            create_instance(ec2, ami_id)
+        elif choice == '99':
             print("Goodbye!")
             break
         else:
-            print("Invalid choice. Please enter a number between 1 and 4.")
+            print("Invalid choice. Please enter right number")
 
 
 if __name__ == "__main__":

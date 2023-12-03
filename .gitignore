@@ -1,3 +1,5 @@
+.metadata/
+
 java/lib/
 java/bin/
 java/.settings/
@@ -5,4 +7,4 @@ java/.classpath
 java/.project
 
 python/venv/
-.metadata/
+python/.idea/
