@@ -169,7 +169,9 @@ def create_instance(ec2, ami_id):
             MaxCount=1,
             IamInstanceProfile={
                 'Name': role_name
-            }
+            },
+            SecurityGroupIds=['sg-0a8ee5bcdfcb52094'], # 환경변수로 수정하기
+            KeyName='term-project'
         )
 
         instance_id = response['Instances'][0]['InstanceId']
