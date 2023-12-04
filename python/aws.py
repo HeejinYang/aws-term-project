@@ -209,9 +209,16 @@ def execute_command(instance_id, command):
 
 def terminate_instance(ec2, instance_id):
     try:
-        response = ec2.terminate_instances(InstanceIds=[instance_id])
-        print(f"Terminating instance {instance_id}")
-        print(f"Termination response: {response}")
+        # 사용자에게 종료 여부를 물어봅니다.
+        user_input = input(f"Do you really want to terminate instance {instance_id}? (yes/no): ")
+
+        # 사용자가 'yes'를 입력했을 때에만 인스턴스 종료를 수행합니다.
+        if user_input.lower() == 'yes':
+            response = ec2.terminate_instances(InstanceIds=[instance_id])
+            print(f"Terminating instance {instance_id}")
+            print(f"Termination response: {response}")
+        else:
+            print("Instance termination canceled by user.")
     except Exception as e:
         print(f"Error terminating instance {instance_id}: {e}")
 
@@ -228,8 +235,8 @@ def main():
         print("5. available regions             6. reboot instance")
         print("7. list images                   8. create instance")
         print("9. start all instance            10. stop all instance")
-        print("11. execute 'condor_status'      12. terminate instance")
-        print("                                 99. Quit")
+        print("11. terminate instance           12. execute command")
+        print("13. execute 'condor_status'      99. Quit")
         print("--------------------------------------------------------")
 
         choice = input("Enter your choice (1-99): ")
@@ -260,14 +267,19 @@ def main():
         elif choice == '10':
             stop_all_instances(ec2)
         elif choice == '11':
-            instance_id = input("Enter instance ID: ")
-            command = input("Enter shell command to execute: ")
-            #command = 'condor_status'
-            result = execute_command(instance_id, command)
-            print(f"Command Result on {instance_id}:\n{result}")
-        elif choice == '12':
             instance_id = input("Enter instance ID to terminate: ")
             terminate_instance(ec2, instance_id)
+        elif choice == '12':
+            instance_id = input("Enter instance ID: ")
+            command = input("Enter shell command to execute: ")
+            result = execute_command(instance_id, command)
+            print(f"Command Result on {instance_id}:\n{result}")
+        elif choice == '13':
+            instance_id = input("Enter instance ID: ")
+            # command = input("Enter shell command to execute: ")
+            command = 'condor_status'
+            result = execute_command(instance_id, command)
+            print(f"Command Result on {instance_id}:\n{result}")
         elif choice == '99':
             print("Goodbye!")
             break
